@@ -42,30 +42,14 @@
     position: absolute;
     inset: 0;
     background: var(--slide-bg);
-    display: flex;
+    display: none;
     flex-direction: column;
     justify-content: center;
     align-items: flex-start;
     padding: 60px 80px;
-    opacity: 0;
-    transform: translateX(60px);
-    transition: opacity 0.45s ease, transform 0.45s ease;
-    pointer-events: none;
-    z-index: 1;
-    visibility: hidden;
   }
   .slide.active {
-    opacity: 1;
-    transform: translateX(0);
-    pointer-events: all;
-    z-index: 10;
-    visibility: visible;
-  }
-  .slide.prev {
-    opacity: 0;
-    transform: translateX(-60px);
-    visibility: visible;
-    z-index: 5;
+    display: flex;
   }
 
   /* slide number accent line */
@@ -781,37 +765,28 @@
   });
 
   function goTo(idx) {
-    if (idx < 0 || idx >= slides.length || idx === current) return;
-    const prev = current;
-    slides[prev].classList.remove('active');
-    slides[prev].classList.add('prev');
-    setTimeout(() => { slides[prev].classList.remove('prev'); }, 500);
+    if (idx < 0 || idx >= slides.length) return;
+    slides[current].classList.remove('active');
     current = idx;
     slides[current].classList.add('active');
-    document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === current));
+    document.querySelectorAll('.dot').forEach(function(d, i) {
+      d.classList.toggle('active', i === current);
+    });
     counter.textContent = (current + 1) + ' / ' + slides.length;
   }
 
   function navigate(dir) { goTo(current + dir); }
 
-  document.addEventListener('keydown', e => {
+  document.addEventListener('keydown', function(e) {
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') navigate(1);
     if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   navigate(-1);
   });
 
-  // click on slide to go next
-  document.querySelectorAll('.slide').forEach(s => {
-    s.addEventListener('click', (e) => {
-      if (e.target.closest('.nav') || e.target.closest('.dots') || e.target.closest('a') || e.target.closest('button')) return;
-      navigate(1);
-    });
-  });
-
   // swipe support
-  let startX = 0;
-  document.addEventListener('touchstart', e => { startX = e.touches[0].clientX; });
-  document.addEventListener('touchend',   e => {
-    const dx = e.changedTouches[0].clientX - startX;
+  var startX = 0;
+  document.addEventListener('touchstart', function(e) { startX = e.touches[0].clientX; });
+  document.addEventListener('touchend', function(e) {
+    var dx = e.changedTouches[0].clientX - startX;
     if (Math.abs(dx) > 50) navigate(dx < 0 ? 1 : -1);
   });
 </script>
