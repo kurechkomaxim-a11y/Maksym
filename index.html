@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UGRAN - Визуализатор гранитных текстур</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        header {
+            background: #111;
+            padding: 20px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #333;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: 4px;
+            color: #fff;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #888;
+            letter-spacing: 1px;
+        }
+
+        .main-container {
+            display: flex;
+            height: calc(100vh - 81px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: #111;
+            border-right: 1px solid #333;
+            overflow-y: auto;
+            padding: 20px;
+            flex-shrink: 0;
+        }
+
+        .sidebar h3 {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #888;
+            margin-bottom: 16px;
+        }
+
+        .texture-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .texture-item {
+            cursor: pointer;
+            border: 2px solid #333;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.2s;
+            background: #222;
+        }
+
+        .texture-item:hover {
+            border-color: #666;
+            transform: scale(1.02);
+        }
+
+        .texture-item.active {
+            border-color: #fff;
+            box-shadow: 0 0 12px rgba(255,255,255,0.2);
+        }
+
+        .texture-item img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .texture-item .texture-name {
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #ccc;
+        }
+
+        .scene-selector {
+            margin-bottom: 20px;
+        }
+
+        .scene-selector h3 {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #888;
+            margin-bottom: 12px;
+        }
+
+        .scene-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .scene-btn {
+            background: #222;
+            border: 1px solid #333;
+            color: #ccc;
+            padding: 10px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            text-align: left;
+            transition: all 0.2s;
+        }
+
+        .scene-btn:hover {
+            background: #2a2a2a;
+            border-color: #555;
+        }
+
+        .scene-btn.active {
+            background: #333;
+            border-color: #fff;
+            color: #fff;
+        }
+
+        /* Viewport */
+        .viewport {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            background: #1a1a1a;
+        }
+
+        .scene {
+            width: 100%;
+            max-width: 900px;
+            position: relative;
+        }
+
+        /* Surface highlight on hover */
+        .surface-highlight {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .surface-highlight::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border: 2px dashed rgba(255,255,255,0.5);
+            z-index: 10;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .surface-highlight:hover::before {
+            opacity: 1;
+        }
+
+        /* ====================== */
+        /* === TERRACE SCENE === */
+        /* ====================== */
+        .terrace {
+            width: 100%;
+            aspect-ratio: 16/10;
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            background: #d4cfc8;
+        }
+
+        .terrace .sky {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 35%;
+            background: linear-gradient(180deg, #6cacde, #a8d4f0, #cde6f5);
+        }
+
+        .terrace .trees {
+            position: absolute;
+            top: 18%; left: 0; right: 0;
+            height: 20%;
+            background:
+                radial-gradient(ellipse 80px 70px at 10% 80%, #3a7a3a 0%, transparent 70%),
+                radial-gradient(ellipse 100px 80px at 25% 70%, #4a8a3a 0%, transparent 70%),
+                radial-gradient(ellipse 90px 75px at 45% 85%, #3a7a2a 0%, transparent 70%),
+                radial-gradient(ellipse 110px 85px at 65% 75%, #4a8a3a 0%, transparent 70%),
+                radial-gradient(ellipse 85px 70px at 82% 80%, #3a7a3a 0%, transparent 70%),
+                radial-gradient(ellipse 70px 65px at 95% 85%, #4a8a2a 0%, transparent 70%);
+        }
+
+        .terrace .house-wall {
+            position: absolute;
+            top: 25%; right: 0;
+            width: 35%; height: 45%;
+            background: #f0ece4;
+            border-left: 3px solid #ddd;
+        }
+
+        .terrace .house-window {
+            position: absolute;
+            top: 30%; right: 5%;
+            width: 20%; height: 20%;
+            background: linear-gradient(135deg, #6ca6cd, #87CEEB, #a0c8e0);
+            border: 3px solid #ccc;
+            z-index: 3;
+        }
+
+        .terrace .railing {
+            position: absolute;
+            top: 35%; left: 0;
+            width: 65%; height: 3%;
+            background: #bbb;
+            z-index: 4;
+            border-radius: 2px;
+        }
+
+        .terrace .railing-posts {
+            position: absolute;
+            top: 35%; left: 0;
+            width: 65%; height: 15%;
+            z-index: 3;
+            background:
+                repeating-linear-gradient(90deg,
+                    #bbb 0px, #bbb 3px,
+                    transparent 3px, transparent 50px
+                );
+        }
+
+        .terrace .terrace-floor {
+            position: absolute;
+            top: 50%; left: 0; right: 0;
+            height: 50%;
+            background: #555;
+            background-size: 200px 200px;
+        }
+
+        .terrace .step-1 {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 8%;
+            background: #555;
+            background-size: 200px 200px;
+            z-index: 2;
+            border-top: 2px solid rgba(0,0,0,0.15);
+        }
+
+        .terrace .furniture-table {
+            position: absolute;
+            top: 55%; left: 15%;
+            width: 25%; height: 3%;
+            background: #8B6F47;
+            border-radius: 2px;
+            z-index: 5;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+
+        .terrace .furniture-chair-l {
+            position: absolute;
+            top: 53%; left: 12%;
+            width: 8%; height: 12%;
+            background: #7a6040;
+            border-radius: 3px 3px 0 0;
+            z-index: 4;
+        }
+
+        .terrace .furniture-chair-r {
+            position: absolute;
+            top: 53%; left: 35%;
+            width: 8%; height: 12%;
+            background: #7a6040;
+            border-radius: 3px 3px 0 0;
+            z-index: 4;
+        }
+
+        .terrace .flower-pot {
+            position: absolute;
+            top: 42%; left: 55%;
+            width: 6%; height: 8%;
+            background: #c46b3a;
+            border-radius: 0 0 4px 4px;
+            z-index: 5;
+        }
+
+        .terrace .plant {
+            position: absolute;
+            top: 34%; left: 54%;
+            width: 8%; height: 10%;
+            background: radial-gradient(ellipse, #4a8a3a 0%, transparent 70%);
+            z-index: 5;
+        }
+
+        /* ========================== */
+        /* === YARD / AREA SCENE === */
+        /* ========================== */
+        .yard {
+            width: 100%;
+            aspect-ratio: 16/10;
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            background: #b8c8a0;
+        }
+
+        .yard .sky {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 30%;
+            background: linear-gradient(180deg, #6cacde, #a8d4f0, #cde6f5);
+        }
+
+        .yard .house {
+            position: absolute;
+            top: 10%; left: 5%;
+            width: 40%; height: 35%;
+            background: #f0ece4;
+            border: 2px solid #ddd;
+            z-index: 2;
+        }
+
+        .yard .roof {
+            position: absolute;
+            top: 5%; left: 3%;
+            width: 44%; height: 8%;
+            background: #8B4513;
+            clip-path: polygon(0% 100%, 50% 0%, 100% 100%);
+            z-index: 3;
+        }
+
+        .yard .house-door {
+            position: absolute;
+            top: 25%; left: 18%;
+            width: 8%; height: 18%;
+            background: #6B4226;
+            border: 2px solid #5a3520;
+            border-radius: 2px 2px 0 0;
+            z-index: 3;
+        }
+
+        .yard .house-win-1 {
+            position: absolute;
+            top: 18%; left: 8%;
+            width: 7%; height: 10%;
+            background: linear-gradient(135deg, #6ca6cd, #87CEEB);
+            border: 2px solid #ccc;
+            z-index: 3;
+        }
+
+        .yard .house-win-2 {
+            position: absolute;
+            top: 18%; left: 30%;
+            width: 7%; height: 10%;
+            background: linear-gradient(135deg, #6ca6cd, #87CEEB);
+            border: 2px solid #ccc;
+            z-index: 3;
+        }
+
+        .yard .lawn-left {
+            position: absolute;
+            top: 30%; left: 0;
+            width: 100%; height: 70%;
+            background: linear-gradient(180deg, #7aaa50, #6a9a45, #5a8a3a);
+        }
+
+        .yard .pathway {
+            position: absolute;
+            top: 43%; left: 15%;
+            width: 18%; height: 57%;
+            background: #555;
+            background-size: 150px 150px;
+            clip-path: polygon(30% 0%, 70% 0%, 85% 100%, 15% 100%);
+            z-index: 2;
+        }
+
+        .yard .patio {
+            position: absolute;
+            top: 60%; right: 5%;
+            width: 35%; height: 30%;
+            background: #555;
+            background-size: 180px 180px;
+            border-radius: 4px;
+            z-index: 2;
+        }
+
+        .yard .garden-bed {
+            position: absolute;
+            top: 55%; right: 45%;
+            width: 20%; height: 15%;
+            background: #5a3a1a;
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        .yard .flowers {
+            position: absolute;
+            top: 52%; right: 47%;
+            width: 16%; height: 10%;
+            z-index: 2;
+            background:
+                radial-gradient(circle 6px at 20% 50%, #e74c3c 0%, transparent 70%),
+                radial-gradient(circle 6px at 40% 30%, #f1c40f 0%, transparent 70%),
+                radial-gradient(circle 6px at 60% 60%, #e74c3c 0%, transparent 70%),
+                radial-gradient(circle 6px at 80% 40%, #f39c12 0%, transparent 70%),
+                radial-gradient(circle 6px at 50% 70%, #f1c40f 0%, transparent 70%);
+        }
+
+        .yard .fence {
+            position: absolute;
+            top: 28%; right: 0;
+            width: 50%; height: 2%;
+            background: #c8b89a;
+            z-index: 1;
+        }
+
+        .yard .tree-1 {
+            position: absolute;
+            top: 15%; right: 15%;
+            width: 15%; height: 25%;
+            background: radial-gradient(ellipse, #3a7a2a 0%, transparent 70%);
+            z-index: 1;
+        }
+
+        .yard .tree-trunk-1 {
+            position: absolute;
+            top: 33%; right: 21%;
+            width: 2%; height: 12%;
+            background: #6B4226;
+            z-index: 1;
+        }
+
+        /* ============================= */
+        /* === INTERIOR FLOOR SCENE === */
+        /* ============================= */
+        .interior {
+            width: 100%;
+            aspect-ratio: 16/10;
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            background: #e8e4df;
+        }
+
+        .interior .back-wall {
+            position: absolute;
+            top: 0; left: 10%; right: 10%;
+            height: 55%;
+            background: #f5f2ed;
+            border-bottom: 3px solid #ddd;
+        }
+
+        .interior .left-wall {
+            position: absolute;
+            top: 0; left: 0;
+            width: 10%; height: 100%;
+            background: linear-gradient(90deg, #e0dcd5, #f0ece5);
+        }
+
+        .interior .right-wall {
+            position: absolute;
+            top: 0; right: 0;
+            width: 10%; height: 100%;
+            background: linear-gradient(-90deg, #e0dcd5, #f0ece5);
+        }
+
+        .interior .int-floor {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 45%;
+            background: #555;
+            background-size: 250px 250px;
+        }
+
+        .interior .baseboard {
+            position: absolute;
+            top: 55%; left: 10%; right: 10%;
+            height: 2%;
+            background: #ddd;
+            z-index: 3;
+        }
+
+        .interior .baseboard-l {
+            position: absolute;
+            top: 55%; left: 0;
+            width: 10%; height: 2%;
+            background: linear-gradient(90deg, #ccc, #ddd);
+            z-index: 3;
+        }
+
+        .interior .baseboard-r {
+            position: absolute;
+            top: 55%; right: 0;
+            width: 10%; height: 2%;
+            background: linear-gradient(-90deg, #ccc, #ddd);
+            z-index: 3;
+        }
+
+        /* Painting on the wall */
+        .interior .painting {
+            position: absolute;
+            top: 12%; left: 35%;
+            width: 18%; height: 25%;
+            background: linear-gradient(135deg, #c49a6c, #e8b87a, #c49a6c);
+            border: 4px solid #8B6F47;
+            z-index: 2;
+        }
+
+        /* Sofa */
+        .interior .sofa {
+            position: absolute;
+            top: 40%; left: 15%;
+            width: 30%; height: 16%;
+            background: #6a7a8a;
+            border-radius: 4px 4px 0 0;
+            z-index: 4;
+        }
+
+        .interior .sofa-back {
+            position: absolute;
+            top: 35%; left: 15%;
+            width: 30%; height: 8%;
+            background: #5a6a7a;
+            border-radius: 4px 4px 0 0;
+            z-index: 3;
+        }
+
+        .interior .sofa-arm-l {
+            position: absolute;
+            top: 38%; left: 13%;
+            width: 3%; height: 18%;
+            background: #5a6a7a;
+            border-radius: 4px 0 0 4px;
+            z-index: 5;
+        }
+
+        .interior .sofa-arm-r {
+            position: absolute;
+            top: 38%; left: 44%;
+            width: 3%; height: 18%;
+            background: #5a6a7a;
+            border-radius: 0 4px 4px 0;
+            z-index: 5;
+        }
+
+        /* Side table */
+        .interior .side-table {
+            position: absolute;
+            top: 45%; right: 20%;
+            width: 10%; height: 10%;
+            background: #8B6F47;
+            border-radius: 2px;
+            z-index: 4;
+        }
+
+        /* Lamp */
+        .interior .lamp-base {
+            position: absolute;
+            top: 42%; right: 22%;
+            width: 2%; height: 5%;
+            background: #555;
+            z-index: 5;
+        }
+
+        .interior .lamp-shade {
+            position: absolute;
+            top: 37%; right: 19%;
+            width: 8%; height: 6%;
+            background: #f5e6c8;
+            clip-path: polygon(20% 100%, 0% 0%, 100% 0%, 80% 100%);
+            z-index: 5;
+        }
+
+        /* Plant */
+        .interior .int-plant-pot {
+            position: absolute;
+            top: 43%; right: 8%;
+            width: 5%; height: 7%;
+            background: #c46b3a;
+            border-radius: 0 0 4px 4px;
+            z-index: 5;
+        }
+
+        .interior .int-plant {
+            position: absolute;
+            top: 30%; right: 6%;
+            width: 9%; height: 15%;
+            background: radial-gradient(ellipse, #4a8a3a 0%, transparent 70%);
+            z-index: 5;
+        }
+
+        /* ============================ */
+        /* === BUILDING FACADE SCENE === */
+        /* ============================ */
+        .facade {
+            width: 100%;
+            aspect-ratio: 16/10;
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .facade .sky {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 25%;
+            background: linear-gradient(180deg, #5a9ad5, #87CEEB, #B0D4E8);
+        }
+
+        .facade .building-wall {
+            position: absolute;
+            top: 10%; left: 3%; right: 3%;
+            bottom: 8%;
+            background: #555;
+            background-size: 200px 200px;
+        }
+
+        .facade .building-top {
+            position: absolute;
+            top: 8%; left: 2%; right: 2%;
+            height: 3%;
+            background: #888;
+            z-index: 2;
+        }
+
+        .facade .window {
+            position: absolute;
+            background: linear-gradient(135deg, #6ca6cd, #87CEEB, #a0c8e0);
+            border: 4px solid #777;
+            z-index: 3;
+        }
+
+        .facade .window .sill {
+            position: absolute;
+            bottom: -6px; left: -4px; right: -4px;
+            height: 6px;
+            background: #999;
+        }
+
+        .facade .win-1 { top: 18%; left: 10%; width: 14%; height: 18%; }
+        .facade .win-2 { top: 18%; left: 30%; width: 14%; height: 18%; }
+        .facade .win-3 { top: 18%; right: 30%; width: 14%; height: 18%; }
+        .facade .win-4 { top: 18%; right: 10%; width: 14%; height: 18%; }
+
+        .facade .win-5 { top: 48%; left: 10%; width: 14%; height: 18%; }
+        .facade .win-6 { top: 48%; left: 30%; width: 14%; height: 18%; }
+        .facade .win-7 { top: 48%; right: 30%; width: 14%; height: 18%; }
+        .facade .win-8 { top: 48%; right: 10%; width: 14%; height: 18%; }
+
+        .facade .entrance {
+            position: absolute;
+            bottom: 8%; left: 38%;
+            width: 24%; height: 25%;
+            background: #444;
+            border: 4px solid #777;
+            border-bottom: none;
+            border-radius: 4px 4px 0 0;
+            z-index: 3;
+        }
+
+        .facade .entrance-door-l {
+            position: absolute;
+            bottom: 8%; left: 40%;
+            width: 10%; height: 22%;
+            background: #5a3520;
+            border: 2px solid #4a2a15;
+            z-index: 4;
+        }
+
+        .facade .entrance-door-r {
+            position: absolute;
+            bottom: 8%; left: 50%;
+            width: 10%; height: 22%;
+            background: #5a3520;
+            border: 2px solid #4a2a15;
+            z-index: 4;
+        }
+
+        .facade .entrance-steps {
+            position: absolute;
+            bottom: 4%; left: 35%;
+            width: 30%; height: 5%;
+            background: #555;
+            background-size: 200px 200px;
+            z-index: 2;
+        }
+
+        .facade .ground {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 8%;
+            background: linear-gradient(180deg, #7a9a50, #6a8a40);
+        }
+
+        .facade .sidewalk {
+            position: absolute;
+            bottom: 0; left: 25%; right: 25%;
+            height: 5%;
+            background: #bbb;
+            z-index: 1;
+        }
+
+        /* Target selector in sidebar */
+        .target-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #333;
+        }
+
+        .target-section h3 {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #888;
+            margin-bottom: 12px;
+        }
+
+        .target-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .target-btn {
+            background: #222;
+            border: 1px solid #333;
+            color: #ccc;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            text-align: left;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .target-btn:hover {
+            background: #2a2a2a;
+            border-color: #555;
+        }
+
+        .target-btn.active {
+            background: #333;
+            border-color: #fff;
+            color: #fff;
+        }
+
+        .target-btn .color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid #555;
+            flex-shrink: 0;
+        }
+
+        /* Texture size control */
+        .size-control {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #333;
+        }
+
+        .size-control h3 {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #888;
+            margin-bottom: 12px;
+        }
+
+        .size-control input[type="range"] {
+            width: 100%;
+            accent-color: #fff;
+        }
+
+        .size-control .size-label {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+                height: auto;
+            }
+            .sidebar {
+                width: 100%;
+                max-height: 300px;
+            }
+            .viewport {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div>
+            <div class="logo">UGRAN</div>
+            <div class="subtitle">Визуализатор гранитных текстур</div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="sidebar">
+            <!-- Scene selector -->
+            <div class="scene-selector">
+                <h3>Сцена</h3>
+                <div class="scene-buttons">
+                    <button class="scene-btn active" data-scene="terrace">Терраса</button>
+                    <button class="scene-btn" data-scene="yard">Территория</button>
+                    <button class="scene-btn" data-scene="interior">Пол интерьера</button>
+                    <button class="scene-btn" data-scene="facade">Фасад</button>
+                </div>
+            </div>
+
+            <!-- Target surface selector -->
+            <div class="target-section" id="targetSection">
+                <h3>Поверхность</h3>
+                <div class="target-buttons" id="targetButtons"></div>
+            </div>
+
+            <!-- Texture size -->
+            <div class="size-control">
+                <h3>Масштаб текстуры</h3>
+                <input type="range" id="textureSize" min="50" max="500" value="200">
+                <div class="size-label" id="sizeLabel">200px</div>
+            </div>
+
+            <!-- Textures -->
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #333;">
+                <h3>Текстуры</h3>
+                <div class="texture-list" id="textureList"></div>
+            </div>
+        </div>
+
+        <div class="viewport" id="viewport"></div>
+    </div>
+
+    <script>
+        const textures = [
+            { id: 'dc2', name: 'UGRAN DC2', file: 'textures/texture_UGRAN DC2.jpg', desc: 'Серый крупнозернистый' },
+            { id: 'dp2', name: 'UGRAN DP2', file: 'textures/texture_UGRAN DP2.jpg', desc: 'Серый мелкозернистый' },
+            { id: 'dr1', name: 'UGRAN DR1', file: 'textures/texture_UGRAN DR1.jpg', desc: 'Красно-чёрный' },
+            { id: 'dw2', name: 'UGRAN DW2', file: 'textures/texture_UGRAN DW2.jpg', desc: 'Тёмно-серый' },
+            { id: 'ds1', name: 'UGRAN DC1', file: 'textures/texture_UGRAN D\u04211.jpg', desc: 'Чёрный лабрадорит' },
+        ];
+
+        const scenes = {
+            terrace: {
+                name: 'Терраса',
+                targets: [
+                    { id: 'terrace-floor', name: 'Пол террасы', selector: '.terrace-floor' },
+                    { id: 'terrace-step', name: 'Ступень', selector: '.step-1' },
+                ],
+                html: `
+                    <div class="terrace">
+                        <div class="sky"></div>
+                        <div class="trees"></div>
+                        <div class="house-wall"></div>
+                        <div class="house-window"></div>
+                        <div class="railing"></div>
+                        <div class="railing-posts"></div>
+                        <div class="terrace-floor surface-highlight" data-target="terrace-floor"></div>
+                        <div class="step-1 surface-highlight" data-target="terrace-step"></div>
+                        <div class="furniture-chair-l"></div>
+                        <div class="furniture-chair-r"></div>
+                        <div class="furniture-table"></div>
+                        <div class="flower-pot"></div>
+                        <div class="plant"></div>
+                    </div>
+                `
+            },
+            yard: {
+                name: 'Территория',
+                targets: [
+                    { id: 'pathway', name: 'Дорожка', selector: '.pathway' },
+                    { id: 'patio', name: 'Площадка', selector: '.patio' },
+                ],
+                html: `
+                    <div class="yard">
+                        <div class="sky"></div>
+                        <div class="tree-trunk-1"></div>
+                        <div class="tree-1"></div>
+                        <div class="roof"></div>
+                        <div class="house"></div>
+                        <div class="house-door"></div>
+                        <div class="house-win-1"></div>
+                        <div class="house-win-2"></div>
+                        <div class="fence"></div>
+                        <div class="lawn-left"></div>
+                        <div class="garden-bed"></div>
+                        <div class="flowers"></div>
+                        <div class="pathway surface-highlight" data-target="pathway"></div>
+                        <div class="patio surface-highlight" data-target="patio"></div>
+                    </div>
+                `
+            },
+            interior: {
+                name: 'Пол интерьера',
+                targets: [
+                    { id: 'int-floor', name: 'Пол', selector: '.int-floor' },
+                ],
+                html: `
+                    <div class="interior">
+                        <div class="left-wall"></div>
+                        <div class="right-wall"></div>
+                        <div class="back-wall"></div>
+                        <div class="painting"></div>
+                        <div class="baseboard"></div>
+                        <div class="baseboard-l"></div>
+                        <div class="baseboard-r"></div>
+                        <div class="int-floor surface-highlight" data-target="int-floor"></div>
+                        <div class="sofa-back"></div>
+                        <div class="sofa"></div>
+                        <div class="sofa-arm-l"></div>
+                        <div class="sofa-arm-r"></div>
+                        <div class="side-table"></div>
+                        <div class="lamp-base"></div>
+                        <div class="lamp-shade"></div>
+                        <div class="int-plant-pot"></div>
+                        <div class="int-plant"></div>
+                    </div>
+                `
+            },
+            facade: {
+                name: 'Фасад',
+                targets: [
+                    { id: 'building-wall', name: 'Стена здания', selector: '.building-wall' },
+                    { id: 'entrance-steps', name: 'Ступени входа', selector: '.entrance-steps' },
+                ],
+                html: `
+                    <div class="facade">
+                        <div class="sky"></div>
+                        <div class="building-top"></div>
+                        <div class="building-wall surface-highlight" data-target="building-wall"></div>
+                        <div class="window win-1"><div class="sill"></div></div>
+                        <div class="window win-2"><div class="sill"></div></div>
+                        <div class="window win-3"><div class="sill"></div></div>
+                        <div class="window win-4"><div class="sill"></div></div>
+                        <div class="window win-5"><div class="sill"></div></div>
+                        <div class="window win-6"><div class="sill"></div></div>
+                        <div class="window win-7"><div class="sill"></div></div>
+                        <div class="window win-8"><div class="sill"></div></div>
+                        <div class="entrance"></div>
+                        <div class="entrance-door-l"></div>
+                        <div class="entrance-door-r"></div>
+                        <div class="entrance-steps surface-highlight" data-target="entrance-steps"></div>
+                        <div class="ground"></div>
+                        <div class="sidewalk"></div>
+                    </div>
+                `
+            }
+        };
+
+        let currentScene = 'terrace';
+        let currentTarget = null;
+        let selectedTexture = null;
+        let textureSize = 200;
+        let appliedTextures = {};
+
+        function init() {
+            renderTextureList();
+            renderScene(currentScene);
+            setupSceneButtons();
+            setupSizeControl();
+        }
+
+        function renderTextureList() {
+            const list = document.getElementById('textureList');
+            list.innerHTML = textures.map(t => `
+                <div class="texture-item" data-id="${t.id}" onclick="selectTexture('${t.id}')">
+                    <img src="${t.file}" alt="${t.name}">
+                    <div class="texture-name">${t.desc}</div>
+                </div>
+            `).join('');
+        }
+
+        function selectTexture(id) {
+            selectedTexture = id;
+            document.querySelectorAll('.texture-item').forEach(el => {
+                el.classList.toggle('active', el.dataset.id === id);
+            });
+            if (currentTarget) applyTexture();
+        }
+
+        function renderScene(sceneId) {
+            currentScene = sceneId;
+            const scene = scenes[sceneId];
+            const viewport = document.getElementById('viewport');
+            viewport.innerHTML = `<div class="scene">${scene.html}</div>`;
+
+            currentTarget = scene.targets[0]?.id || null;
+            renderTargetButtons(scene);
+            restoreTextures();
+
+            document.querySelectorAll('.surface-highlight').forEach(el => {
+                el.addEventListener('click', () => {
+                    currentTarget = el.dataset.target;
+                    updateTargetButtons();
+                    if (selectedTexture) applyTexture();
+                });
+            });
+        }
+
+        function renderTargetButtons(scene) {
+            const container = document.getElementById('targetButtons');
+            container.innerHTML = scene.targets.map(t => `
+                <button class="target-btn ${t.id === currentTarget ? 'active' : ''}"
+                        data-target="${t.id}" onclick="selectTarget('${t.id}')">
+                    <span class="color-dot" id="dot-${t.id}" style="background: #333;"></span>
+                    ${t.name}
+                </button>
+            `).join('');
+            updateDots();
+        }
+
+        function selectTarget(targetId) {
+            currentTarget = targetId;
+            updateTargetButtons();
+            if (selectedTexture) applyTexture();
+        }
+
+        function updateTargetButtons() {
+            document.querySelectorAll('.target-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.target === currentTarget);
+            });
+        }
+
+        function applyTexture() {
+            if (!selectedTexture || !currentTarget) return;
+
+            const texture = textures.find(t => t.id === selectedTexture);
+            if (!texture) return;
+
+            const scene = scenes[currentScene];
+            const target = scene.targets.find(t => t.id === currentTarget);
+            if (!target) return;
+
+            const el = document.querySelector(target.selector);
+            if (!el) return;
+
+            el.style.backgroundImage = `url('${texture.file}')`;
+            el.style.backgroundSize = `${textureSize}px ${textureSize}px`;
+            el.style.backgroundRepeat = 'repeat';
+
+            if (!appliedTextures[currentScene]) appliedTextures[currentScene] = {};
+            appliedTextures[currentScene][currentTarget] = { textureId: selectedTexture, size: textureSize };
+
+            updateDots();
+        }
+
+        function restoreTextures() {
+            const stored = appliedTextures[currentScene];
+            if (!stored) return;
+
+            const scene = scenes[currentScene];
+            for (const [targetId, data] of Object.entries(stored)) {
+                const target = scene.targets.find(t => t.id === targetId);
+                const texture = textures.find(t => t.id === data.textureId);
+                if (!target || !texture) continue;
+
+                const el = document.querySelector(target.selector);
+                if (!el) continue;
+
+                el.style.backgroundImage = `url('${texture.file}')`;
+                el.style.backgroundSize = `${data.size}px ${data.size}px`;
+                el.style.backgroundRepeat = 'repeat';
+            }
+            updateDots();
+        }
+
+        function updateDots() {
+            const stored = appliedTextures[currentScene] || {};
+            const scene = scenes[currentScene];
+            scene.targets.forEach(t => {
+                const dot = document.getElementById(`dot-${t.id}`);
+                if (!dot) return;
+                const data = stored[t.id];
+                if (data) {
+                    const texture = textures.find(tx => tx.id === data.textureId);
+                    if (texture) {
+                        dot.style.background = '';
+                        dot.style.backgroundImage = `url('${texture.file}')`;
+                        dot.style.backgroundSize = 'cover';
+                    }
+                } else {
+                    dot.style.backgroundImage = '';
+                    dot.style.background = '#333';
+                }
+            });
+        }
+
+        function setupSceneButtons() {
+            document.querySelectorAll('.scene-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    renderScene(btn.dataset.scene);
+                });
+            });
+        }
+
+        function setupSizeControl() {
+            const slider = document.getElementById('textureSize');
+            const label = document.getElementById('sizeLabel');
+            slider.addEventListener('input', () => {
+                textureSize = parseInt(slider.value);
+                label.textContent = textureSize + 'px';
+
+                const stored = appliedTextures[currentScene] || {};
+                const scene = scenes[currentScene];
+                for (const [targetId, data] of Object.entries(stored)) {
+                    data.size = textureSize;
+                    const target = scene.targets.find(t => t.id === targetId);
+                    if (!target) continue;
+                    const el = document.querySelector(target.selector);
+                    if (!el) continue;
+                    el.style.backgroundSize = `${textureSize}px ${textureSize}px`;
+                }
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>
