@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UGRAN - Визуализатор гранитных текстур</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        header {
+            background: #111;
+            padding: 20px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #333;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: 4px;
+            color: #fff;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #888;
+            letter-spacing: 1px;
+        }
+
+        .main-container {
+            display: flex;
+            height: calc(100vh - 81px);
+        }
+
+        /* Sidebar with textures */
+        .sidebar {
+            width: 280px;
+            background: #111;
+            border-right: 1px solid #333;
+            overflow-y: auto;
+            padding: 20px;
+            flex-shrink: 0;
+        }
+
+        .sidebar h3 {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #888;
+            margin-bottom: 16px;
+        }
+
+        .texture-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .texture-item {
+            cursor: pointer;
+            border: 2px solid #333;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.2s;
+            background: #222;
+        }
+
+        .texture-item:hover {
+            border-color: #666;
+            transform: scale(1.02);
+        }
+
+        .texture-item.active {
+            border-color: #fff;
+            box-shadow: 0 0 12px rgba(255,255,255,0.2);
+        }
+
+        .texture-item img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .texture-item .texture-name {
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #ccc;
+        }
+
+        /* Scene selector */
+        .scene-selector {
+            margin-bottom: 20px;
+        }
+
+        .scene-selector h3 {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #888;
+            margin-bottom: 12px;
+        }
+
+        .scene-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .scene-btn {
+            background: #222;
+            border: 1px solid #333;
+            color: #ccc;
+            padding: 10px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            text-align: left;
+            transition: all 0.2s;
+        }
+
+        .scene-btn:hover {
+            background: #2a2a2a;
+            border-color: #555;
+        }
+
+        .scene-btn.active {
+            background: #333;
+            border-color: #fff;
+            color: #fff;
+        }
+
+        /* Viewport */
+        .viewport {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            background: #1a1a1a;
+        }
+
+        /* Kitchen scene */
+        .scene {
+            width: 100%;
+            max-width: 900px;
+            position: relative;
+        }
+
+        /* === KITCHEN SCENE === */
+        .kitchen {
+            width: 100%;
+            aspect-ratio: 16/10;
+            position: relative;
+            background: #e8e4df;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        /* Wall */
+        .kitchen .wall {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 55%;
+            background: #f0ece7;
+        }
+
+        /* Backsplash - texturable */
+        .kitchen .backsplash {
+            position: absolute;
+            top: 30%;
+            left: 10%;
+            right: 10%;
+            height: 25%;
+            background: #333;
+            border-radius: 2px;
+            background-size: 200px 200px;
+        }
+
+        /* Upper cabinets */
+        .kitchen .upper-cabinets {
+            position: absolute;
+            top: 5%;
+            left: 10%;
+            right: 10%;
+            height: 25%;
+            display: flex;
+            gap: 4px;
+        }
+
+        .kitchen .upper-cabinet {
+            flex: 1;
+            background: #f5f2ed;
+            border-radius: 3px;
+            border: 1px solid #ddd;
+            position: relative;
+        }
+
+        .kitchen .upper-cabinet::after {
+            content: '';
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 30px;
+            background: #bbb;
+            border-radius: 2px;
+        }
+
+        /* Countertop - texturable */
+        .kitchen .countertop {
+            position: absolute;
+            top: 55%;
+            left: 8%;
+            right: 8%;
+            height: 6%;
+            background: #333;
+            border-radius: 2px;
+            z-index: 2;
+            background-size: 200px 200px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        /* Lower cabinets */
+        .kitchen .lower-cabinets {
+            position: absolute;
+            top: 61%;
+            left: 10%;
+            right: 10%;
+            height: 30%;
+            display: flex;
+            gap: 4px;
+        }
+
+        .kitchen .lower-cabinet {
+            flex: 1;
+            background: #f5f2ed;
+            border-radius: 3px;
+            border: 1px solid #ddd;
+            position: relative;
+        }
+
+        .kitchen .lower-cabinet::after {
+            content: '';
+            position: absolute;
+            right: 10px;
+            top: 12px;
+            width: 3px;
+            height: 30px;
+            background: #bbb;
+            border-radius: 2px;
+        }
+
+        /* Floor - texturable */
+        .kitchen .floor {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 9%;
+            background: #333;
+            background-size: 200px 200px;
+        }
+
+        /* === BATHROOM SCENE === */
+        .bathroom {
+            width: 100%;
+            aspect-ratio: 16/10;
+            position: relative;
+            background: #e0ddd8;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .bathroom .wall-top {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 35%;
+            background: #f0ece7;
+        }
+
+        .bathroom .wall-tiles {
+            position: absolute;
+            top: 35%;
+            left: 0;
+            right: 0;
+            height: 35%;
+            background: #333;
+            background-size: 150px 150px;
+        }
+
+        .bathroom .bath-floor {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 30%;
+            background: #333;
+            background-size: 200px 200px;
+        }
+
+        /* Vanity */
+        .bathroom .vanity {
+            position: absolute;
+            bottom: 30%;
+            left: 10%;
+            width: 35%;
+            height: 25%;
+            background: #f5f2ed;
+            border: 1px solid #ddd;
+            border-radius: 3px 3px 0 0;
+            z-index: 2;
+        }
+
+        .bathroom .vanity-top {
+            position: absolute;
+            bottom: 55%;
+            left: 9%;
+            width: 37%;
+            height: 4%;
+            background: #333;
+            background-size: 150px 150px;
+            z-index: 3;
+            border-radius: 2px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        /* Mirror */
+        .bathroom .mirror {
+            position: absolute;
+            top: 5%;
+            left: 15%;
+            width: 25%;
+            height: 28%;
+            background: linear-gradient(135deg, #c8d8e8, #a0b8c8, #c0d0e0);
+            border: 3px solid #ddd;
+            border-radius: 4px;
+            z-index: 2;
+        }
+
+        /* Bathtub */
+        .bathroom .bathtub {
+            position: absolute;
+            bottom: 30%;
+            right: 8%;
+            width: 40%;
+            height: 18%;
+            background: #fff;
+            border: 2px solid #ddd;
+            border-radius: 60px 60px 4px 4px;
+            z-index: 2;
+        }
+
+        /* === FLOOR SCENE === */
+        .floor-scene {
+            width: 100%;
+            aspect-ratio: 16/10;
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            perspective: 800px;
+        }
+
+        .floor-scene .room-wall {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: linear-gradient(180deg, #f5f2ed, #e8e4df);
+        }
+
+        .floor-scene .room-floor {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: #333;
+            background-size: 250px 250px;
+        }
+
+        .floor-scene .baseboard {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2%;
+            background: #ddd;
+            z-index: 2;
+        }
+
+        /* === FACADE SCENE === */
+        .facade {
+            width: 100%;
+            aspect-ratio: 16/10;
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .facade .sky {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 30%;
+            background: linear-gradient(180deg, #87CEEB, #B0D4E8);
+        }
+
+        .facade .building-wall {
+            position: absolute;
+            top: 15%;
+            left: 5%;
+            right: 5%;
+            bottom: 10%;
+            background: #333;
+            background-size: 200px 200px;
+        }
+
+        .facade .window {
+            position: absolute;
+            background: linear-gradient(135deg, #6ca6cd, #87CEEB, #a0c8e0);
+            border: 4px solid #888;
+            border-radius: 2px;
+            z-index: 2;
+        }
+
+        .facade .window-1 { top: 25%; left: 12%; width: 15%; height: 22%; }
+        .facade .window-2 { top: 25%; left: 42%; width: 15%; height: 22%; }
+        .facade .window-3 { top: 25%; right: 12%; width: 15%; height: 22%; }
+        .facade .window-4 { top: 58%; left: 12%; width: 15%; height: 22%; }
+        .facade .window-5 { top: 58%; left: 42%; width: 15%; height: 22%; }
+        .facade .window-6 { top: 58%; right: 12%; width: 15%; height: 22%; }
+
+        .facade .ground {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 10%;
+            background: #8B9F6B;
+        }
+
+        /* Surface highlight */
+        .surface-highlight {
+            position: relative;
+        }
+
+        .surface-highlight::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border: 2px dashed rgba(255,255,255,0.5);
+            z-index: 10;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .surface-highlight:hover::before {
+            opacity: 1;
+        }
+
+        /* Target selector in sidebar */
+        .target-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #333;
+        }
+
+        .target-section h3 {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #888;
+            margin-bottom: 12px;
+        }
+
+        .target-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .target-btn {
+            background: #222;
+            border: 1px solid #333;
+            color: #ccc;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            text-align: left;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .target-btn:hover {
+            background: #2a2a2a;
+            border-color: #555;
+        }
+
+        .target-btn.active {
+            background: #333;
+            border-color: #fff;
+            color: #fff;
+        }
+
+        .target-btn .color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid #555;
+            flex-shrink: 0;
+        }
+
+        /* Texture size control */
+        .size-control {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #333;
+        }
+
+        .size-control h3 {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #888;
+            margin-bottom: 12px;
+        }
+
+        .size-control input[type="range"] {
+            width: 100%;
+            accent-color: #fff;
+        }
+
+        .size-control .size-label {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        /* No texture message */
+        .no-texture-msg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #888;
+            font-size: 14px;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+                height: auto;
+            }
+            .sidebar {
+                width: 100%;
+                max-height: 300px;
+            }
+            .viewport {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div>
+            <div class="logo">UGRAN</div>
+            <div class="subtitle">Визуализатор гранитных текстур</div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="sidebar">
+            <!-- Scene selector -->
+            <div class="scene-selector">
+                <h3>Сцена</h3>
+                <div class="scene-buttons">
+                    <button class="scene-btn active" data-scene="kitchen">Кухня</button>
+                    <button class="scene-btn" data-scene="bathroom">Ванная</button>
+                    <button class="scene-btn" data-scene="floor">Пол</button>
+                    <button class="scene-btn" data-scene="facade">Фасад</button>
+                </div>
+            </div>
+
+            <!-- Target surface selector -->
+            <div class="target-section" id="targetSection">
+                <h3>Поверхность</h3>
+                <div class="target-buttons" id="targetButtons">
+                    <!-- Filled dynamically -->
+                </div>
+            </div>
+
+            <!-- Texture size -->
+            <div class="size-control">
+                <h3>Масштаб текстуры</h3>
+                <input type="range" id="textureSize" min="50" max="500" value="200">
+                <div class="size-label" id="sizeLabel">200px</div>
+            </div>
+
+            <!-- Textures -->
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #333;">
+                <h3>Текстуры</h3>
+                <div class="texture-list" id="textureList">
+                    <!-- Filled dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <div class="viewport" id="viewport">
+            <!-- Scene rendered here -->
+        </div>
+    </div>
+
+    <script>
+        const textures = [
+            { id: 'dc2', name: 'UGRAN DC2', file: 'textures/texture_UGRAN DC2.jpg', desc: 'Серый крупнозернистый' },
+            { id: 'dp2', name: 'UGRAN DP2', file: 'textures/texture_UGRAN DP2.jpg', desc: 'Серый мелкозернистый' },
+            { id: 'dr1', name: 'UGRAN DR1', file: 'textures/texture_UGRAN DR1.jpg', desc: 'Красно-чёрный' },
+            { id: 'dw2', name: 'UGRAN DW2', file: 'textures/texture_UGRAN DW2.jpg', desc: 'Тёмно-серый' },
+            { id: 'ds1', name: 'UGRAN DC1', file: 'textures/texture_UGRAN D\u04211.jpg', desc: 'Чёрный лабрадорит' },
+        ];
+
+        const scenes = {
+            kitchen: {
+                name: 'Кухня',
+                targets: [
+                    { id: 'countertop', name: 'Столешница', selector: '.countertop' },
+                    { id: 'backsplash', name: 'Фартук', selector: '.backsplash' },
+                    { id: 'floor', name: 'Пол', selector: '.floor' },
+                ],
+                html: `
+                    <div class="kitchen">
+                        <div class="wall"></div>
+                        <div class="upper-cabinets">
+                            <div class="upper-cabinet"></div>
+                            <div class="upper-cabinet"></div>
+                            <div class="upper-cabinet"></div>
+                        </div>
+                        <div class="backsplash surface-highlight" data-target="backsplash"></div>
+                        <div class="countertop surface-highlight" data-target="countertop"></div>
+                        <div class="lower-cabinets">
+                            <div class="lower-cabinet"></div>
+                            <div class="lower-cabinet"></div>
+                            <div class="lower-cabinet"></div>
+                            <div class="lower-cabinet"></div>
+                        </div>
+                        <div class="floor surface-highlight" data-target="floor"></div>
+                    </div>
+                `
+            },
+            bathroom: {
+                name: 'Ванная',
+                targets: [
+                    { id: 'wall-tiles', name: 'Стена (плитка)', selector: '.wall-tiles' },
+                    { id: 'vanity-top', name: 'Столешница', selector: '.vanity-top' },
+                    { id: 'bath-floor', name: 'Пол', selector: '.bath-floor' },
+                ],
+                html: `
+                    <div class="bathroom">
+                        <div class="wall-top"></div>
+                        <div class="wall-tiles surface-highlight" data-target="wall-tiles"></div>
+                        <div class="mirror"></div>
+                        <div class="vanity"></div>
+                        <div class="vanity-top surface-highlight" data-target="vanity-top"></div>
+                        <div class="bathtub"></div>
+                        <div class="bath-floor surface-highlight" data-target="bath-floor"></div>
+                    </div>
+                `
+            },
+            floor: {
+                name: 'Пол',
+                targets: [
+                    { id: 'room-floor', name: 'Пол', selector: '.room-floor' },
+                ],
+                html: `
+                    <div class="floor-scene">
+                        <div class="room-wall"></div>
+                        <div class="baseboard"></div>
+                        <div class="room-floor surface-highlight" data-target="room-floor"></div>
+                    </div>
+                `
+            },
+            facade: {
+                name: 'Фасад',
+                targets: [
+                    { id: 'building-wall', name: 'Стена здания', selector: '.building-wall' },
+                ],
+                html: `
+                    <div class="facade">
+                        <div class="sky"></div>
+                        <div class="building-wall surface-highlight" data-target="building-wall"></div>
+                        <div class="window window-1"></div>
+                        <div class="window window-2"></div>
+                        <div class="window window-3"></div>
+                        <div class="window window-4"></div>
+                        <div class="window window-5"></div>
+                        <div class="window window-6"></div>
+                        <div class="ground"></div>
+                    </div>
+                `
+            }
+        };
+
+        let currentScene = 'kitchen';
+        let currentTarget = null;
+        let selectedTexture = null;
+        let textureSize = 200;
+        // Store applied textures per scene per target
+        let appliedTextures = {};
+
+        function init() {
+            renderTextureList();
+            renderScene(currentScene);
+            setupSceneButtons();
+            setupSizeControl();
+        }
+
+        function renderTextureList() {
+            const list = document.getElementById('textureList');
+            list.innerHTML = textures.map(t => `
+                <div class="texture-item" data-id="${t.id}" onclick="selectTexture('${t.id}')">
+                    <img src="${t.file}" alt="${t.name}">
+                    <div class="texture-name">${t.desc}</div>
+                </div>
+            `).join('');
+        }
+
+        function selectTexture(id) {
+            selectedTexture = id;
+            document.querySelectorAll('.texture-item').forEach(el => {
+                el.classList.toggle('active', el.dataset.id === id);
+            });
+            // Apply to current target if one is selected
+            if (currentTarget) {
+                applyTexture();
+            }
+        }
+
+        function renderScene(sceneId) {
+            currentScene = sceneId;
+            const scene = scenes[sceneId];
+            const viewport = document.getElementById('viewport');
+            viewport.innerHTML = `<div class="scene">${scene.html}</div>`;
+
+            // Set first target as default
+            currentTarget = scene.targets[0]?.id || null;
+            renderTargetButtons(scene);
+
+            // Re-apply stored textures
+            restoreTextures();
+
+            // Add click handlers to surfaces
+            document.querySelectorAll('.surface-highlight').forEach(el => {
+                el.addEventListener('click', () => {
+                    currentTarget = el.dataset.target;
+                    updateTargetButtons();
+                    if (selectedTexture) applyTexture();
+                });
+            });
+        }
+
+        function renderTargetButtons(scene) {
+            const container = document.getElementById('targetButtons');
+            container.innerHTML = scene.targets.map(t => `
+                <button class="target-btn ${t.id === currentTarget ? 'active' : ''}"
+                        data-target="${t.id}" onclick="selectTarget('${t.id}')">
+                    <span class="color-dot" id="dot-${t.id}" style="background: #333;"></span>
+                    ${t.name}
+                </button>
+            `).join('');
+            updateDots();
+        }
+
+        function selectTarget(targetId) {
+            currentTarget = targetId;
+            updateTargetButtons();
+            if (selectedTexture) applyTexture();
+        }
+
+        function updateTargetButtons() {
+            document.querySelectorAll('.target-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.target === currentTarget);
+            });
+        }
+
+        function applyTexture() {
+            if (!selectedTexture || !currentTarget) return;
+
+            const texture = textures.find(t => t.id === selectedTexture);
+            if (!texture) return;
+
+            const scene = scenes[currentScene];
+            const target = scene.targets.find(t => t.id === currentTarget);
+            if (!target) return;
+
+            const el = document.querySelector(target.selector);
+            if (!el) return;
+
+            el.style.backgroundImage = `url('${texture.file}')`;
+            el.style.backgroundSize = `${textureSize}px ${textureSize}px`;
+            el.style.backgroundRepeat = 'repeat';
+
+            // Store
+            if (!appliedTextures[currentScene]) appliedTextures[currentScene] = {};
+            appliedTextures[currentScene][currentTarget] = { textureId: selectedTexture, size: textureSize };
+
+            updateDots();
+        }
+
+        function restoreTextures() {
+            const stored = appliedTextures[currentScene];
+            if (!stored) return;
+
+            const scene = scenes[currentScene];
+            for (const [targetId, data] of Object.entries(stored)) {
+                const target = scene.targets.find(t => t.id === targetId);
+                const texture = textures.find(t => t.id === data.textureId);
+                if (!target || !texture) continue;
+
+                const el = document.querySelector(target.selector);
+                if (!el) continue;
+
+                el.style.backgroundImage = `url('${texture.file}')`;
+                el.style.backgroundSize = `${data.size}px ${data.size}px`;
+                el.style.backgroundRepeat = 'repeat';
+            }
+            updateDots();
+        }
+
+        function updateDots() {
+            const stored = appliedTextures[currentScene] || {};
+            const scene = scenes[currentScene];
+            scene.targets.forEach(t => {
+                const dot = document.getElementById(`dot-${t.id}`);
+                if (!dot) return;
+                const data = stored[t.id];
+                if (data) {
+                    const texture = textures.find(tx => tx.id === data.textureId);
+                    if (texture) {
+                        dot.style.backgroundImage = `url('${texture.file}')`;
+                        dot.style.backgroundSize = 'cover';
+                        dot.style.background = '';
+                        dot.style.backgroundImage = `url('${texture.file}')`;
+                        dot.style.backgroundSize = 'cover';
+                    }
+                } else {
+                    dot.style.backgroundImage = '';
+                    dot.style.background = '#333';
+                }
+            });
+        }
+
+        function setupSceneButtons() {
+            document.querySelectorAll('.scene-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    renderScene(btn.dataset.scene);
+                });
+            });
+        }
+
+        function setupSizeControl() {
+            const slider = document.getElementById('textureSize');
+            const label = document.getElementById('sizeLabel');
+            slider.addEventListener('input', () => {
+                textureSize = parseInt(slider.value);
+                label.textContent = textureSize + 'px';
+
+                // Update all applied textures in current scene
+                const stored = appliedTextures[currentScene] || {};
+                const scene = scenes[currentScene];
+                for (const [targetId, data] of Object.entries(stored)) {
+                    data.size = textureSize;
+                    const target = scene.targets.find(t => t.id === targetId);
+                    if (!target) continue;
+                    const el = document.querySelector(target.selector);
+                    if (!el) continue;
+                    el.style.backgroundSize = `${textureSize}px ${textureSize}px`;
+                }
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>
