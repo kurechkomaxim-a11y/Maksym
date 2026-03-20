@@ -51,15 +51,21 @@
     transform: translateX(60px);
     transition: opacity 0.45s ease, transform 0.45s ease;
     pointer-events: none;
+    z-index: 1;
+    visibility: hidden;
   }
   .slide.active {
     opacity: 1;
     transform: translateX(0);
     pointer-events: all;
+    z-index: 10;
+    visibility: visible;
   }
   .slide.prev {
     opacity: 0;
     transform: translateX(-60px);
+    visibility: visible;
+    z-index: 5;
   }
 
   /* slide number accent line */
@@ -445,7 +451,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    z-index: 100;
+    z-index: 9999;
   }
   .nav-btn {
     width: 44px; height: 44px;
@@ -477,7 +483,7 @@
     transform: translateX(-50%);
     display: flex;
     gap: 8px;
-    z-index: 100;
+    z-index: 9999;
   }
   .dot {
     width: 6px; height: 6px;
@@ -501,6 +507,7 @@
     color: rgba(255,255,255,0.2);
     letter-spacing: 1px;
     font-weight: 500;
+    z-index: 9999;
   }
 </style>
 </head>
@@ -774,14 +781,15 @@
   });
 
   function goTo(idx) {
-    if (idx < 0 || idx >= slides.length) return;
-    slides[current].classList.remove('active');
-    slides[current].classList.add('prev');
-    setTimeout(() => slides[current].classList.remove('prev'), 450);
+    if (idx < 0 || idx >= slides.length || idx === current) return;
+    const prev = current;
+    slides[prev].classList.remove('active');
+    slides[prev].classList.add('prev');
+    setTimeout(() => { slides[prev].classList.remove('prev'); }, 500);
     current = idx;
     slides[current].classList.add('active');
     document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === current));
-    counter.textContent = `${current + 1} / ${slides.length}`;
+    counter.textContent = (current + 1) + ' / ' + slides.length;
   }
 
   function navigate(dir) { goTo(current + dir); }
@@ -789,6 +797,14 @@
   document.addEventListener('keydown', e => {
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') navigate(1);
     if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   navigate(-1);
+  });
+
+  // click on slide to go next
+  document.querySelectorAll('.slide').forEach(s => {
+    s.addEventListener('click', (e) => {
+      if (e.target.closest('.nav') || e.target.closest('.dots') || e.target.closest('a') || e.target.closest('button')) return;
+      navigate(1);
+    });
   });
 
   // swipe support
