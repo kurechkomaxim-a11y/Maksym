@@ -319,138 +319,71 @@
         /* ========================== */
         .yard {
             width: 100%;
-            aspect-ratio: 16/10;
+            aspect-ratio: 14/10;
             position: relative;
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-            background: #b8c8a0;
+            background-image: url('scenes/territory.jpg');
+            background-size: cover;
+            background-position: center;
         }
 
-        .yard .sky {
+        .yard .walkway-overlay {
             position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 30%;
-            background: linear-gradient(180deg, #6cacde, #a8d4f0, #cde6f5);
-        }
-
-        .yard .house {
-            position: absolute;
-            top: 10%; left: 5%;
-            width: 40%; height: 35%;
-            background: #f0ece4;
-            border: 2px solid #ddd;
-            z-index: 2;
-        }
-
-        .yard .roof {
-            position: absolute;
-            top: 5%; left: 3%;
-            width: 44%; height: 8%;
-            background: #8B4513;
-            clip-path: polygon(0% 100%, 50% 0%, 100% 100%);
-            z-index: 3;
-        }
-
-        .yard .house-door {
-            position: absolute;
-            top: 25%; left: 18%;
-            width: 8%; height: 18%;
-            background: #6B4226;
-            border: 2px solid #5a3520;
-            border-radius: 2px 2px 0 0;
-            z-index: 3;
-        }
-
-        .yard .house-win-1 {
-            position: absolute;
-            top: 18%; left: 8%;
-            width: 7%; height: 10%;
-            background: linear-gradient(135deg, #6ca6cd, #87CEEB);
-            border: 2px solid #ccc;
-            z-index: 3;
-        }
-
-        .yard .house-win-2 {
-            position: absolute;
-            top: 18%; left: 30%;
-            width: 7%; height: 10%;
-            background: linear-gradient(135deg, #6ca6cd, #87CEEB);
-            border: 2px solid #ccc;
-            z-index: 3;
-        }
-
-        .yard .lawn-left {
-            position: absolute;
-            top: 30%; left: 0;
-            width: 100%; height: 70%;
-            background: linear-gradient(180deg, #7aaa50, #6a9a45, #5a8a3a);
-        }
-
-        .yard .pathway {
-            position: absolute;
-            top: 43%; left: 15%;
-            width: 18%; height: 57%;
-            background: #555;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(190, 180, 160, 0.7);
             background-size: 150px 150px;
-            clip-path: polygon(30% 0%, 70% 0%, 85% 100%, 15% 100%);
             z-index: 2;
+            cursor: pointer;
         }
 
-        .yard .patio {
+        .yard .walkway-central {
+            clip-path: polygon(41.8% 38.5%, 48.2% 38.5%, 50.9% 64.5%, 39.8% 64.5%);
+        }
+
+        .yard .walkway-left {
+            clip-path: polygon(4.3% 50.5%, 25% 43.5%, 26.8% 44.2%, 6.1% 52.5%);
+        }
+
+        .yard .walkway-right {
+            clip-path: polygon(48.9% 38.5%, 85.4% 40.5%, 85.4% 43.5%, 51.3% 42.5%);
+        }
+
+        .yard .walkway-circle {
+            clip-path: circle(6.8% at 45% 72%);
+        }
+
+        .yard .pergola-floor {
             position: absolute;
-            top: 60%; right: 5%;
-            width: 35%; height: 30%;
-            background: #555;
+            top: 38%; left: 63.6%;
+            width: 32.1%; height: 12%;
+            background: rgba(190, 180, 160, 0.7);
             background-size: 180px 180px;
-            border-radius: 4px;
             z-index: 2;
+            cursor: pointer;
         }
 
-        .yard .garden-bed {
+        .yard .upload-overlay {
             position: absolute;
-            top: 55%; right: 45%;
-            width: 20%; height: 15%;
-            background: #5a3a1a;
-            border-radius: 50%;
-            z-index: 1;
+            top: 8px; right: 8px;
+            z-index: 10;
         }
 
-        .yard .flowers {
-            position: absolute;
-            top: 52%; right: 47%;
-            width: 16%; height: 10%;
-            z-index: 2;
-            background:
-                radial-gradient(circle 6px at 20% 50%, #e74c3c 0%, transparent 70%),
-                radial-gradient(circle 6px at 40% 30%, #f1c40f 0%, transparent 70%),
-                radial-gradient(circle 6px at 60% 60%, #e74c3c 0%, transparent 70%),
-                radial-gradient(circle 6px at 80% 40%, #f39c12 0%, transparent 70%),
-                radial-gradient(circle 6px at 50% 70%, #f1c40f 0%, transparent 70%);
+        .yard .upload-btn {
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            backdrop-filter: blur(4px);
         }
 
-        .yard .fence {
-            position: absolute;
-            top: 28%; right: 0;
-            width: 50%; height: 2%;
-            background: #c8b89a;
-            z-index: 1;
-        }
-
-        .yard .tree-1 {
-            position: absolute;
-            top: 15%; right: 15%;
-            width: 15%; height: 25%;
-            background: radial-gradient(ellipse, #3a7a2a 0%, transparent 70%);
-            z-index: 1;
-        }
-
-        .yard .tree-trunk-1 {
-            position: absolute;
-            top: 33%; right: 21%;
-            width: 2%; height: 12%;
-            background: #6B4226;
-            z-index: 1;
+        .yard .upload-btn:hover {
+            background: rgba(0,0,0,0.8);
         }
 
         /* ============================= */
@@ -905,25 +838,20 @@
                 name: 'Территория',
                 realWidthMeters: 10, // двор ~10 метров в ширину
                 targets: [
-                    { id: 'pathway', name: 'Дорожка', selector: '.pathway' },
-                    { id: 'patio', name: 'Площадка', selector: '.patio' },
+                    { id: 'walkways', name: 'Дорожки', selector: '.walkway-central, .walkway-left, .walkway-right, .walkway-circle' },
+                    { id: 'pergola-floor', name: 'Площадка беседки', selector: '.pergola-floor' },
                 ],
                 html: `
                     <div class="yard">
-                        <div class="sky"></div>
-                        <div class="tree-trunk-1"></div>
-                        <div class="tree-1"></div>
-                        <div class="roof"></div>
-                        <div class="house"></div>
-                        <div class="house-door"></div>
-                        <div class="house-win-1"></div>
-                        <div class="house-win-2"></div>
-                        <div class="fence"></div>
-                        <div class="lawn-left"></div>
-                        <div class="garden-bed"></div>
-                        <div class="flowers"></div>
-                        <div class="pathway surface-highlight" data-target="pathway"></div>
-                        <div class="patio surface-highlight" data-target="patio"></div>
+                        <div class="walkway-overlay walkway-central surface-highlight" data-target="walkways"></div>
+                        <div class="walkway-overlay walkway-left surface-highlight" data-target="walkways"></div>
+                        <div class="walkway-overlay walkway-right surface-highlight" data-target="walkways"></div>
+                        <div class="walkway-overlay walkway-circle surface-highlight" data-target="walkways"></div>
+                        <div class="pergola-floor surface-highlight" data-target="pergola-floor"></div>
+                        <div class="upload-overlay">
+                            <button class="upload-btn" onclick="document.getElementById('photoUpload').click()">Загрузить фото</button>
+                            <input type="file" id="photoUpload" accept="image/*" style="display:none" onchange="uploadYardPhoto(this)">
+                        </div>
                     </div>
                 `
             },
@@ -1086,13 +1014,15 @@
             const target = scene.targets.find(t => t.id === currentTarget);
             if (!target) return;
 
-            const el = document.querySelector(target.selector);
-            if (!el) return;
+            const els = document.querySelectorAll(target.selector);
+            if (!els.length) return;
 
             const tilePx = getTileSizePx();
-            el.style.backgroundImage = `url('${texture.file}')`;
-            el.style.backgroundSize = `${tilePx}px ${tilePx}px`;
-            el.style.backgroundRepeat = 'repeat';
+            els.forEach(el => {
+                el.style.backgroundImage = `url('${texture.file}')`;
+                el.style.backgroundSize = `${tilePx}px ${tilePx}px`;
+                el.style.backgroundRepeat = 'repeat';
+            });
 
             if (!appliedTextures[currentScene]) appliedTextures[currentScene] = {};
             appliedTextures[currentScene][currentTarget] = { textureId: selectedTexture, scalePercent: scalePercent };
@@ -1129,13 +1059,15 @@
                 const texture = textures.find(t => t.id === data.textureId);
                 if (!target || !texture) continue;
 
-                const el = document.querySelector(target.selector);
-                if (!el) continue;
+                const els = document.querySelectorAll(target.selector);
+                if (!els.length) continue;
 
                 const tilePx = Math.round((sceneWidthPx * 0.30 / scene.realWidthMeters) * (data.scalePercent / 100));
-                el.style.backgroundImage = `url('${texture.file}')`;
-                el.style.backgroundSize = `${tilePx}px ${tilePx}px`;
-                el.style.backgroundRepeat = 'repeat';
+                els.forEach(el => {
+                    el.style.backgroundImage = `url('${texture.file}')`;
+                    el.style.backgroundSize = `${tilePx}px ${tilePx}px`;
+                    el.style.backgroundRepeat = 'repeat';
+                });
             }
             updateDots();
         }
@@ -1190,11 +1122,23 @@
                     data.scalePercent = scalePercent;
                     const target = scene.targets.find(t => t.id === targetId);
                     if (!target) continue;
-                    const el = document.querySelector(target.selector);
-                    if (!el) continue;
-                    el.style.backgroundSize = `${tilePx}px ${tilePx}px`;
+                    document.querySelectorAll(target.selector).forEach(el => {
+                        el.style.backgroundSize = `${tilePx}px ${tilePx}px`;
+                    });
                 }
             });
+        }
+
+        function uploadYardPhoto(input) {
+            if (!input.files || !input.files[0]) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const yardEl = document.querySelector('.yard');
+                if (yardEl) {
+                    yardEl.style.backgroundImage = `url('${e.target.result}')`;
+                }
+            };
+            reader.readAsDataURL(input.files[0]);
         }
 
         init();
