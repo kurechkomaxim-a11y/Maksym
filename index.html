@@ -851,8 +851,8 @@
             <!-- Texture size -->
             <div class="size-control">
                 <h3>Масштаб текстуры</h3>
-                <input type="range" id="textureSize" min="50" max="500" value="200">
-                <div class="size-label" id="sizeLabel">200px</div>
+                <input type="range" id="textureSize" min="30" max="300" value="100" step="5">
+                <div class="size-label" id="sizeLabel">Плитка 30×30 см (масштаб 1:1)</div>
             </div>
 
             <!-- Textures -->
@@ -874,9 +874,11 @@
             { id: 'ds1', name: 'UGRAN DC1', file: 'textures/texture_UGRAN D\u04211.jpg', desc: 'Чёрный лабрадорит' },
         ];
 
+        // Реальная ширина каждой сцены в метрах (для расчёта масштаба плитки 30×30 см)
         const scenes = {
             terrace: {
                 name: 'Терраса',
+                realWidthMeters: 6, // терраса ~6 метров в ширину
                 targets: [
                     { id: 'terrace-floor', name: 'Пол террасы', selector: '.terrace-floor' },
                     { id: 'terrace-step', name: 'Ступень', selector: '.step-1' },
@@ -901,6 +903,7 @@
             },
             yard: {
                 name: 'Территория',
+                realWidthMeters: 10, // двор ~10 метров в ширину
                 targets: [
                     { id: 'pathway', name: 'Дорожка', selector: '.pathway' },
                     { id: 'patio', name: 'Площадка', selector: '.patio' },
@@ -926,6 +929,7 @@
             },
             interior: {
                 name: 'Пол интерьера',
+                realWidthMeters: 5, // комната ~5 метров в ширину
                 targets: [
                     { id: 'int-floor', name: 'Пол', selector: '.int-floor' },
                 ],
@@ -953,6 +957,7 @@
             },
             facade: {
                 name: 'Фасад',
+                realWidthMeters: 14, // фасад здания ~14 метров в ширину
                 targets: [
                     { id: 'building-wall', name: 'Стена здания', selector: '.building-wall' },
                     { id: 'entrance-steps', name: 'Ступени входа', selector: '.entrance-steps' },
@@ -984,14 +989,29 @@
         let currentScene = 'terrace';
         let currentTarget = null;
         let selectedTexture = null;
-        let textureSize = 200;
+        let scalePercent = 100; // 100% = реальный масштаб 30×30 см
         let appliedTextures = {};
+
+        // Рассчитать размер плитки 30×30 см в пикселях для текущей сцены
+        function getTileSizePx() {
+            const scene = scenes[currentScene];
+            const sceneEl = document.querySelector('.scene');
+            if (!sceneEl || !scene) return 50;
+            const sceneWidthPx = sceneEl.offsetWidth || 900;
+            // Сколько пикселей = 30 см в масштабе сцены
+            const tilePx = (sceneWidthPx * 0.30) / scene.realWidthMeters;
+            // Применяем пользовательский масштаб
+            return Math.round(tilePx * (scalePercent / 100));
+        }
 
         function init() {
             renderTextureList();
             renderScene(currentScene);
             setupSceneButtons();
             setupSizeControl();
+            // Автоматически выбрать первую текстуру и наложить на все поверхности
+            selectTexture(textures[0].id);
+            autoApplyToAllTargets();
         }
 
         function renderTextureList() {
@@ -1009,7 +1029,8 @@
             document.querySelectorAll('.texture-item').forEach(el => {
                 el.classList.toggle('active', el.dataset.id === id);
             });
-            if (currentTarget) applyTexture();
+            // Наложить на все поверхности текущей сцены
+            autoApplyToAllTargets();
         }
 
         function renderScene(sceneId) {
@@ -1068,21 +1089,41 @@
             const el = document.querySelector(target.selector);
             if (!el) return;
 
+            const tilePx = getTileSizePx();
             el.style.backgroundImage = `url('${texture.file}')`;
-            el.style.backgroundSize = `${textureSize}px ${textureSize}px`;
+            el.style.backgroundSize = `${tilePx}px ${tilePx}px`;
             el.style.backgroundRepeat = 'repeat';
 
             if (!appliedTextures[currentScene]) appliedTextures[currentScene] = {};
-            appliedTextures[currentScene][currentTarget] = { textureId: selectedTexture, size: textureSize };
+            appliedTextures[currentScene][currentTarget] = { textureId: selectedTexture, scalePercent: scalePercent };
 
             updateDots();
         }
 
+        // Наложить текстуру на все поверхности текущей сцены
+        function autoApplyToAllTargets() {
+            if (!selectedTexture) return;
+            const scene = scenes[currentScene];
+            scene.targets.forEach(t => {
+                currentTarget = t.id;
+                applyTexture();
+            });
+            currentTarget = scene.targets[0]?.id || null;
+            updateTargetButtons();
+        }
+
         function restoreTextures() {
             const stored = appliedTextures[currentScene];
-            if (!stored) return;
+            if (!stored) {
+                // Если нет сохранённых — автоматически наложить выбранную текстуру
+                if (selectedTexture) autoApplyToAllTargets();
+                return;
+            }
 
             const scene = scenes[currentScene];
+            const sceneEl = document.querySelector('.scene');
+            const sceneWidthPx = sceneEl ? sceneEl.offsetWidth : 900;
+
             for (const [targetId, data] of Object.entries(stored)) {
                 const target = scene.targets.find(t => t.id === targetId);
                 const texture = textures.find(t => t.id === data.textureId);
@@ -1091,8 +1132,9 @@
                 const el = document.querySelector(target.selector);
                 if (!el) continue;
 
+                const tilePx = Math.round((sceneWidthPx * 0.30 / scene.realWidthMeters) * (data.scalePercent / 100));
                 el.style.backgroundImage = `url('${texture.file}')`;
-                el.style.backgroundSize = `${data.size}px ${data.size}px`;
+                el.style.backgroundSize = `${tilePx}px ${tilePx}px`;
                 el.style.backgroundRepeat = 'repeat';
             }
             updateDots();
@@ -1133,18 +1175,24 @@
             const slider = document.getElementById('textureSize');
             const label = document.getElementById('sizeLabel');
             slider.addEventListener('input', () => {
-                textureSize = parseInt(slider.value);
-                label.textContent = textureSize + 'px';
+                scalePercent = parseInt(slider.value);
+                const realCm = Math.round(30 * scalePercent / 100);
+                if (scalePercent === 100) {
+                    label.textContent = `Плитка 30×30 см (масштаб 1:1)`;
+                } else {
+                    label.textContent = `Плитка отображается как ${realCm}×${realCm} см (${scalePercent}%)`;
+                }
 
+                const tilePx = getTileSizePx();
                 const stored = appliedTextures[currentScene] || {};
                 const scene = scenes[currentScene];
                 for (const [targetId, data] of Object.entries(stored)) {
-                    data.size = textureSize;
+                    data.scalePercent = scalePercent;
                     const target = scene.targets.find(t => t.id === targetId);
                     if (!target) continue;
                     const el = document.querySelector(target.selector);
                     if (!el) continue;
-                    el.style.backgroundSize = `${textureSize}px ${textureSize}px`;
+                    el.style.backgroundSize = `${tilePx}px ${tilePx}px`;
                 }
             });
         }
